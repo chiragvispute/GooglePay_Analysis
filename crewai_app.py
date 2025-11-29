@@ -30,8 +30,10 @@ if GEMINI_API_KEY:
     try:
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
+        # Use a simpler LLM setup for older CrewAI version
+        from crewai.llm import LLM
         gemini_llm = LLM(
-            model="gemini/gemini-1.5-flash",
+            model="gemini-pro",
             api_key=GEMINI_API_KEY
         )
     except Exception as e:
