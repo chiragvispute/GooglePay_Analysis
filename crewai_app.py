@@ -9,7 +9,7 @@ import os
 import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-import pandas as pd
+from collections import defaultdict, Counter
 from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 from bs4 import BeautifulSoup
@@ -71,34 +71,51 @@ def analyze_transaction_data(transaction_data: str) -> str:
     """Analyze Google Pay transaction data for patterns, insights, and recommendations"""
     try:
         data = json.loads(transaction_data)
-        df = pd.DataFrame(data)
         
-        if len(df) == 0:
+        if len(data) == 0:
             return "No transactions to analyze"
         
-        # Basic analysis
-        total_spend = df['amount'].sum()
-        avg_transaction = df['amount'].mean()
-        top_merchant = df['recipient'].value_counts().head(1).to_dict()
+        # Basic analysis using pure Python
+        amounts = [tx['amount'] for tx in data]
+        total_spend = sum(amounts)
+        avg_transaction = total_spend / len(amounts) if amounts else 0
+        
+        # Count recipients
+        recipient_counts = Counter(tx['recipient'] for tx in data)
+        top_merchant = dict(recipient_counts.most_common(1))
         
         # Monthly trends
-        df['month'] = pd.to_datetime(df['date'], errors='coerce').dt.strftime('%Y-%m')
-        monthly_spend = df.groupby('month')['amount'].sum().to_dict()
+        monthly_spend = defaultdict(float)
+        for tx in data:
+            try:
+                date_obj = datetime.strptime(tx['date'], '%Y-%m-%d')
+                month = date_obj.strftime('%Y-%m')
+                monthly_spend[month] += tx['amount']
+            except:
+                continue
         
         # Payment methods
-        payment_methods = df['payment_method'].value_counts().to_dict()
+        payment_method_counts = Counter(tx['payment_method'] for tx in data)
+        payment_methods = dict(payment_method_counts)
+        
+        # Get top 5 merchants
+        top_merchants = dict(recipient_counts.most_common(5))
+        
+        # Get date range
+        dates = [tx['date'] for tx in data]
+        date_range = {
+            "start": min(dates) if dates else None,
+            "end": max(dates) if dates else None
+        }
         
         analysis = {
             "total_spend": float(total_spend),
             "average_transaction": float(avg_transaction),
-            "transaction_count": len(df),
-            "top_merchants": dict(df['recipient'].value_counts().head(5)),
-            "monthly_trends": monthly_spend,
+            "transaction_count": len(data),
+            "top_merchants": top_merchants,
+            "monthly_trends": dict(monthly_spend),
             "payment_methods": payment_methods,
-            "date_range": {
-                "start": df['date'].min(),
-                "end": df['date'].max()
-            }
+            "date_range": date_range
         }
         
         return json.dumps(analysis, indent=2)

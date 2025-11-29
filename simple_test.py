@@ -44,4 +44,4 @@ try:
 except Exception as e:
     print(f"❌ Error: {e}")
     print("Make sure all dependencies are installed:")
-    print("pip install fastapi uvicorn crewai google-generativeai beautifulsoup4 pandas python-dotenv")
+    print("pip install fastapi uvicorn crewai google-generativeai beautifulsoup4 python-dotenv")
