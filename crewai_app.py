@@ -24,18 +24,31 @@ load_dotenv()
 os.environ["OPENAI_API_KEY"] = "dummy"  # CrewAI requires this even when not using OpenAI
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+# Set environment variables for Google GenAI
+if GEMINI_API_KEY:
+    os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
+    os.environ["GOOGLE_GENAI_API_KEY"] = GEMINI_API_KEY
+
 # Setup Gemini LLM for CrewAI
 gemini_llm = None
 if GEMINI_API_KEY:
     try:
         import google.generativeai as genai
         genai.configure(api_key=GEMINI_API_KEY)
-        # Use a simpler LLM setup for older CrewAI version
-        from crewai.llm import LLM
-        gemini_llm = LLM(
-            model="gemini-2.5-flash",
-            api_key=GEMINI_API_KEY
-        )
+        
+        # Try different LLM configuration approaches for CrewAI
+        try:
+            from crewai.llm import LLM
+            gemini_llm = LLM(
+                model="google/gemini-1.5-flash",
+                api_key=GEMINI_API_KEY
+            )
+            print("✅ Gemini LLM configured with CrewAI LLM class")
+        except:
+            # Fallback: Try direct string model
+            gemini_llm = "google/gemini-1.5-flash"
+            print("✅ Gemini LLM configured with model string")
+            
     except Exception as e:
         print(f"Warning: Could not configure Gemini LLM: {e}")
         # Fallback to basic analysis without LLM
