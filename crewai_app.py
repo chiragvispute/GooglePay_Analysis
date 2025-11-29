@@ -33,25 +33,15 @@ if GEMINI_API_KEY:
 gemini_llm = None
 if GEMINI_API_KEY:
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
+        # Set environment variable for Google GenAI
+        os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
         
-        # Try different LLM configuration approaches for CrewAI
-        try:
-            from crewai.llm import LLM
-            gemini_llm = LLM(
-                model="google/gemini-1.5-flash",
-                api_key=GEMINI_API_KEY
-            )
-            print("✅ Gemini LLM configured with CrewAI LLM class")
-        except:
-            # Fallback: Try direct string model
-            gemini_llm = "google/gemini-1.5-flash"
-            print("✅ Gemini LLM configured with model string")
+        # Use simple model string - CrewAI will handle the rest
+        gemini_llm = "google/gemini-1.5-flash"
+        print("✅ Gemini LLM configured successfully")
             
     except Exception as e:
         print(f"Warning: Could not configure Gemini LLM: {e}")
-        # Fallback to basic analysis without LLM
         gemini_llm = None
 
 # Initialize FastAPI
@@ -133,43 +123,53 @@ class GPPayAnalyzer:
         
         # Check if we have LLM available
         if not gemini_llm:
-            print("Warning: No LLM configured, using basic analysis")
+            print("Warning: No LLM configured, using basic analysis mode")
             return
         
-        # Financial Analyst Agent
-        self.financial_analyst = Agent(
-            role='Financial Data Analyst',
-            goal='Analyze Google Pay transaction data to identify spending patterns, trends, and financial insights',
-            backstory="""You are an expert financial analyst specializing in personal finance and transaction analysis. 
-            You excel at identifying spending patterns, detecting anomalies, and providing actionable financial insights 
-            from transaction data.""",
-            tools=[analyze_transaction_data],
-            llm=gemini_llm,
-            verbose=True,
-            allow_delegation=False
-        )
-        
-        # Financial Advisor Agent
-        self.financial_advisor = Agent(
-            role='Personal Financial Advisor',
-            goal='Provide personalized financial recommendations and budgeting advice based on spending analysis',
-            backstory="""You are a certified financial advisor with expertise in personal budgeting, expense optimization, 
-            and financial planning. You provide practical, actionable advice to help individuals manage their finances better.""",
-            llm=gemini_llm,
-            verbose=True,
-            allow_delegation=False
-        )
-        
-        # Insights Generator Agent
-        self.insights_generator = Agent(
-            role='Financial Insights Specialist',
-            goal='Generate comprehensive financial insights and identify important trends from transaction data',
-            backstory="""You are a specialist in financial data interpretation and insight generation. You excel at 
-            finding meaningful patterns in financial data and presenting them in an easy-to-understand format.""",
-            llm=gemini_llm,
-            verbose=True,
-            allow_delegation=False
-        )
+        try:
+            # Financial Analyst Agent
+            self.financial_analyst = Agent(
+                role='Financial Data Analyst',
+                goal='Analyze Google Pay transaction data to identify spending patterns, trends, and financial insights',
+                backstory="""You are an expert financial analyst specializing in personal finance and transaction analysis. 
+                You excel at identifying spending patterns, detecting anomalies, and providing actionable financial insights 
+                from transaction data.""",
+                tools=[analyze_transaction_data],
+                llm=gemini_llm,
+                verbose=True,
+                allow_delegation=False
+            )
+            
+            # Financial Advisor Agent
+            self.financial_advisor = Agent(
+                role='Personal Financial Advisor',
+                goal='Provide personalized financial recommendations and budgeting advice based on spending analysis',
+                backstory="""You are a certified financial advisor with expertise in personal budgeting, expense optimization, 
+                and financial planning. You provide practical, actionable advice to help individuals manage their finances better.""",
+                llm=gemini_llm,
+                verbose=True,
+                allow_delegation=False
+            )
+            
+            # Insights Generator Agent
+            self.insights_generator = Agent(
+                role='Financial Insights Specialist',
+                goal='Generate comprehensive financial insights and identify important trends from transaction data',
+                backstory="""You are a specialist in financial data interpretation and insight generation. You excel at 
+                finding meaningful patterns in financial data and presenting them in an easy-to-understand format.""",
+                llm=gemini_llm,
+                verbose=True,
+                allow_delegation=False
+            )
+            
+            print("✅ CrewAI agents initialized successfully")
+            
+        except Exception as e:
+            print(f"Warning: Failed to initialize CrewAI agents: {e}")
+            print("Falling back to basic analysis mode")
+            self.financial_analyst = None
+            self.financial_advisor = None  
+            self.insights_generator = None
         
     def parse_html_content(self, html_content: str) -> List[Dict]:
         """Convert Google Pay HTML content to structured JSON with improved date parsing"""
