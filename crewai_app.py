@@ -156,7 +156,7 @@ class GPPayAnalyzer:
         
     def parse_html_content(self, html_content: str) -> List[Dict]:
         """Convert Google Pay HTML content to structured JSON with improved date parsing"""
-        soup = BeautifulSoup(html_content, 'html.parser')
+        soup = BeautifulSoup(html_content, 'html.parser')  # Use built-in parser instead of lxml
         
         # Find transaction blocks
         blocks = soup.find_all('div', class_=re.compile(r'outer-cell.*mdl-shadow'))
