@@ -36,13 +36,19 @@ if GEMINI_API_KEY:
         # Set environment variable for Google GenAI
         os.environ["GOOGLE_API_KEY"] = GEMINI_API_KEY
         
-        # Use simple model string - CrewAI will handle the rest
-        gemini_llm = "google/gemini-1.5-flash"
+        # Initialize LLM with proper configuration for Google GenAI
+        gemini_llm = LLM(
+            model="gemini-1.5-flash",
+            base_url="https://generativelanguage.googleapis.com/v1beta",
+            api_key=GEMINI_API_KEY
+        )
         print("✅ Gemini LLM configured successfully")
             
     except Exception as e:
         print(f"Warning: Could not configure Gemini LLM: {e}")
-        gemini_llm = None
+        # Fallback to string configuration
+        gemini_llm = "gemini-1.5-flash"
+        print("✅ Using string-based Gemini configuration")
 
 # Initialize FastAPI
 app = FastAPI(title="Google Pay Smart Analyzer with CrewAI", version="2.0.0")
