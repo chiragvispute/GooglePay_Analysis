@@ -33,7 +33,7 @@ if GEMINI_API_KEY:
         # Use a simpler LLM setup for older CrewAI version
         from crewai.llm import LLM
         gemini_llm = LLM(
-            model="gemini-pro",
+            model="gemini-2.5-flash",
             api_key=GEMINI_API_KEY
         )
     except Exception as e:

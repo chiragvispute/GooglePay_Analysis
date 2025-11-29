@@ -3,7 +3,7 @@ uvicorn[standard]==0.24.0
 python-multipart==0.0.6
 beautifulsoup4==4.12.2
 pandas==2.0.3
-crewai==0.28.8
-google-generativeai==0.3.2
+crewai==1.6.1
+google-generativeai==0.8.3
 python-dotenv==1.0.0
 lxml==4.9.3
