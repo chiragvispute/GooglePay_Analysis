@@ -235,18 +235,23 @@ class GPPayAnalyzer:
         
         # If no LLM configured, return basic analysis
         if not gemini_llm or not hasattr(self, 'financial_analyst'):
-            df = pd.DataFrame(filtered_txns)
-            total_spend = df['amount'].sum()
-            top_merchant = df['recipient'].value_counts().head(1).to_dict()
+            amounts = [float(t['amount']) for t in filtered_txns]
+            total_spend = sum(amounts)
+            
+            # Count recipients
+            recipient_counts = Counter([t['recipient'] for t in filtered_txns])
+            top_merchant = recipient_counts.most_common(1)[0] if recipient_counts else ("N/A", 0)
+            
+            avg_transaction = total_spend / len(amounts) if amounts else 0
             
             return {
                 "summary": f"Analyzed {len(filtered_txns)} transactions for {timeframe} period",
-                "analysis": f"Total spending: ₹{total_spend:,.2f}. Top merchant: {list(top_merchant.keys())[0] if top_merchant else 'N/A'}",
+                "analysis": f"Total spending: ₹{total_spend:,.2f}. Top merchant: {top_merchant[0]}",
                 "recommendations": ["Track high-value transactions", "Monitor recurring payments", "Consider budgeting apps"],
                 "key_insights": [
                     f"You spent ₹{total_spend:,.2f} across {len(filtered_txns)} transactions",
-                    f"Average transaction: ₹{df['amount'].mean():.2f}",
-                    f"Most frequent merchant: {list(top_merchant.keys())[0] if top_merchant else 'N/A'}"
+                    f"Average transaction: ₹{avg_transaction:.2f}",
+                    f"Most frequent merchant: {top_merchant[0]} ({top_merchant[1]} transactions)"
                 ],
                 "total_transactions": len(filtered_txns),
                 "ai_engine": "Basic Analysis (LLM not configured)"
@@ -440,11 +445,14 @@ async def get_quick_insights(file: UploadFile = File(...)):
         if not transactions:
             raise HTTPException(status_code=400, detail="No transactions found in HTML file")
         
-        df = pd.DataFrame(transactions)
+        # Calculate statistics with pure Python
+        amounts = [float(t['amount']) for t in transactions]
+        total_spend = sum(amounts)
+        avg_transaction = total_spend / len(amounts) if amounts else 0
         
-        total_spend = df['amount'].sum()
-        avg_transaction = df['amount'].mean()
-        top_merchant = df['recipient'].value_counts().head(1).to_dict()
+        # Count recipients
+        recipient_counts = Counter([t['recipient'] for t in transactions])
+        top_merchant = recipient_counts.most_common(1)[0] if recipient_counts else ("N/A", 0)
         
         return {
             "status": "success",
@@ -452,10 +460,11 @@ async def get_quick_insights(file: UploadFile = File(...)):
                 "total_spend": float(total_spend),
                 "average_transaction": float(avg_transaction),
                 "transaction_count": len(transactions),
-                "top_merchant": top_merchant,
+                "top_merchant": top_merchant[0] if top_merchant != ("N/A", 0) else "N/A",
+                "top_merchant_count": top_merchant[1] if top_merchant != ("N/A", 0) else 0,
                 "date_range": {
-                    "start": df['date'].min(),
-                    "end": df['date'].max()
+                    "start": min([t['date'] for t in transactions]) if transactions else None,
+                    "end": max([t['date'] for t in transactions]) if transactions else None
                 }
             },
             "ai_engine": "CrewAI Ready"
