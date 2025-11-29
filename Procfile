@@ -1,0 +1,1 @@
+web: python crewai_app.py
