@@ -1,5 +1,14 @@
 # 🚀 Deploy Google Pay CrewAI Analyzer to Render
 
+## 🛠️ Latest Fixes Applied
+
+### ✅ Build Issues Resolved
+- **Fixed**: `lxml` compilation errors on Render (removed dependency)
+- **Fixed**: Python 3.13 compatibility issues (using Python 3.11)
+- **Fixed**: `python-dotenv` version conflict (CrewAI needs 1.1.1+)
+- **Added**: `runtime.txt` specifying Python 3.11.11
+- **Updated**: BeautifulSoup to use built-in `html.parser` instead of lxml
+
 ## Quick Deployment Steps
 
 ### 1. Render Setup
